@@ -1,34 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import { Container, Row, Col, Button, Form, Stack } from 'react-bootstrap'
 import './App.css'
+import { AUTO_LANGUAGE } from './constants'
+import { ArrowsIcon } from './components/Icons'
+import { useStore } from './hooks/useStore'
+import { LanguageSelector } from './components/LanguageSelector'
+import { SectionType } from './types.d'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { fromLanguage, setFromLanguage, interchangeLanguages, setToLanguage, toLanguage } = useStore()
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
+    <Container fluid>
+      <h1>Google translate</h1>
+      <Row>
+        <Col>
+          <Stack gap={2}>
+            <LanguageSelector type={SectionType.From} value={fromLanguage} onChange={setFromLanguage} />
+            <Form.Control as='textarea' placeholder='Enter text' autoFocus style={{ height: '150px' }} />
+          </Stack>
+        </Col>
+        <Col xs='auto'>
+          <Button variant='link' disabled={fromLanguage === AUTO_LANGUAGE} onClick={interchangeLanguages}>
+            <ArrowsIcon />
+          </Button>
+        </Col>
+        <Col>
+          <Stack gap={2}>
+            <LanguageSelector type={SectionType.To} value={toLanguage} onChange={setToLanguage} />
+            <Form.Control as='textarea' placeholder='Translate' style={{ height: '150px' }} />
+          </Stack>
+        </Col>
+      </Row>
+    </Container>
   )
 }
 
