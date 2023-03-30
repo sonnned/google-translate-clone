@@ -1,14 +1,42 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
-import { Container, Row, Col, Button, Form, Stack } from 'react-bootstrap'
+import { Container, Row, Col, Button, Stack } from 'react-bootstrap'
 import './App.css'
-import { AUTO_LANGUAGE } from './constants'
-import { ArrowsIcon } from './components/Icons'
+import { AUTO_LANGUAGE, VOICE_FOR_LANGUAGE } from './constants'
+import { ArrowsIcon, ClipboardIcon, SpeakerIcon } from './components/Icons'
 import { useStore } from './hooks/useStore'
 import { LanguageSelector } from './components/LanguageSelector'
 import { SectionType } from './types.d'
+import TextArea from './components/TextArea'
+import { useEffect } from 'react'
+import { translate } from './services/translate'
+import { useDebounce } from './hooks/useDebounce'
 
 function App() {
-  const { fromLanguage, setFromLanguage, interchangeLanguages, setToLanguage, toLanguage } = useStore()
+  const { fromLanguage, setFromLanguage, interchangeLanguages, setToLanguage, toLanguage, fromText, result, setFromText, setResult, loading } = useStore()
+
+  const debouncedText = useDebounce(fromText, 300)
+
+  useEffect(() => {
+    if (debouncedText === '') return
+
+    translate({ fromLanguage, toLanguage, text: debouncedText })
+      .then(result => {
+        if (result === null || result === undefined) return
+        setResult(result)
+      })
+      .catch(() => { setResult('Error') })
+  }, [debouncedText, fromLanguage, toLanguage])
+
+  const handleClipboard = () => {
+    navigator.clipboard.writeText(result).catch(() => { })
+  }
+
+  const handleSpeak = () => {
+    const utterance = new SpeechSynthesisUtterance(result)
+    utterance.lang = VOICE_FOR_LANGUAGE[toLanguage]
+    utterance.rate = 0.9
+    speechSynthesis.speak(utterance)
+  }
 
   return (
     <Container fluid>
@@ -17,7 +45,7 @@ function App() {
         <Col>
           <Stack gap={2}>
             <LanguageSelector type={SectionType.From} value={fromLanguage} onChange={setFromLanguage} />
-            <Form.Control as='textarea' placeholder='Enter text' autoFocus style={{ height: '150px' }} />
+            <TextArea type={SectionType.From} value={fromText} onChange={setFromText} />
           </Stack>
         </Col>
         <Col xs='auto'>
@@ -28,7 +56,21 @@ function App() {
         <Col>
           <Stack gap={2}>
             <LanguageSelector type={SectionType.To} value={toLanguage} onChange={setToLanguage} />
-            <Form.Control as='textarea' placeholder='Translate' style={{ height: '150px' }} />
+            <div style={{ position: 'relative' }}>
+              <TextArea type={SectionType.To} value={result} onChange={setResult} loading={loading} />
+              <div style={{ position: 'absolute', left: 0, bottom: 0, display: 'flex' }}>
+                <Button
+                  variant='link'
+                  onClick={handleClipboard}>
+                  <ClipboardIcon />
+                </Button>
+                <Button
+                  variant='link'
+                  onClick={handleSpeak}>
+                  <SpeakerIcon />
+                </Button>
+              </div>
+            </div>
           </Stack>
         </Col>
       </Row>
